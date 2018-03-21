@@ -17,12 +17,12 @@ EDA and cleaning of a dataset of different types of news. To be used in the futu
 
 
 
-#Web Scraping
+# Web Scraping
 #### https://github.com/albertoseabra/Projects/blob/master/beer_recipe_webscraper.ipynb
 Web scrapping of all the recipes of beers from a website with complete information
 
 
-#Others
+# Others
 #### https://github.com/albertoseabra/Projects/tree/master/blackjack
 BlackJack game with multiplayer. With OOP.
 
