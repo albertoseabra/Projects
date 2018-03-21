@@ -26,3 +26,8 @@ Web scrapping of all the recipes of beers from a website with complete informati
 #### https://github.com/albertoseabra/Projects/tree/master/blackjack
 BlackJack game with multiplayer. With OOP.
 
+#### https://github.com/albertoseabra/Projects/tree/master/summarizer
+Summarizer of text. Using two different methods:  
+  -Selecting most important sentences based on tf-idf
+  -Creating a graph, calculating similarity and applying PageRank 
+
