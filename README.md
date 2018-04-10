@@ -18,6 +18,11 @@ EDA and cleaning of a dataset of different types of news. To be used in the futu
 #### https://github.com/albertoseabra/Projects/blob/master/ML_mammogram.ipynb
 Trying to predict if a mammogram mass is benign or not with several different ML algorithms.
 
+#### https://github.com/albertoseabra/Projects/blob/master/machine_learning/cajamar.ipynb
+Predicting the next product each customer will subscribe between 94 different possible products.
+Predictions based on products already subscribed and the date of subsciption, and social demographic information.
+Feature Engineering
+
 
 # Others
 #### https://github.com/albertoseabra/Projects/blob/master/beer_recipe_webscraper.ipynb
