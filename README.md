@@ -1,4 +1,4 @@
-# Exploratory Data Analysis & Feature Engineering
+# Exploratory Data Analysis, Data Cleaning & Feature Engineering
 #### https://github.com/albertoseabra/Projects/blob/master/exploration/adults_analysis.ipynb
 EDA of a data set (https://archive.ics.uci.edu/ml/datasets/Adult) with census data of the USA. Includes information like age, 
 ocupation, education, hours worked. The target is if the person makes more or less than 50k. 
@@ -16,13 +16,11 @@ https://github.com/albertoseabra/Projects/blob/master/exploration/flights_predic
 EDA and cleaning of a dataset of different types of news. To be used in the future.
 
 
-
-# Web Scraping
+# Others
 #### https://github.com/albertoseabra/Projects/blob/master/beer_recipe_webscraper.ipynb
 Web scrapping of all the recipes of beers from a website with complete information
 
 
-# Others
 #### https://github.com/albertoseabra/Projects/tree/master/blackjack
 BlackJack game with multiplayer. With OOP.
 
