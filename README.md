@@ -1,4 +1,4 @@
-# Exploratory Data Analysis, Data Cleaning & Feature Engineering
+# Exploratory Data Analysis, Data Cleaning, Feature Engineering & Machine Learning
 #### https://github.com/albertoseabra/Projects/blob/master/exploration/adults_analysis.ipynb
 EDA of a data set (https://archive.ics.uci.edu/ml/datasets/Adult) with census data of the USA. Includes information like age, 
 ocupation, education, hours worked. The target is if the person makes more or less than 50k. 
@@ -14,6 +14,9 @@ https://github.com/albertoseabra/Projects/blob/master/exploration/flights_predic
 
 #### https://github.com/albertoseabra/Projects/blob/master/final_project/news_separated.ipynb
 EDA and cleaning of a dataset of different types of news. To be used in the future.
+
+#### https://github.com/albertoseabra/Projects/blob/master/ML_mammogram.ipynb
+Trying to predict if a mammogram mass is benign or not with several different ML algorithms.
 
 
 # Others
