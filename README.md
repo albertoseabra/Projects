@@ -15,6 +15,9 @@ https://github.com/albertoseabra/Projects/blob/master/exploration/flights_predic
 #### https://github.com/albertoseabra/Projects/blob/master/final_project/news_separated.ipynb
 EDA and cleaning of a dataset of different types of news. To be used in the future.
 
+#### https://github.com/albertoseabra/Projects/blob/master/ML_mammogram.ipynb
+Trying to predict if a mammogram mass is benign or not with several different ML algorithms.
+
 
 # Others
 #### https://github.com/albertoseabra/Projects/blob/master/beer_recipe_webscraper.ipynb
