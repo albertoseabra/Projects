@@ -8,57 +8,74 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.stem import LancasterStemmer
 from sklearn.metrics.pairwise import cosine_similarity
 import networkx as nx
 import re
+import pickle
 
+stemmer = LancasterStemmer()
 
-def tokenizing(text):
-   # first tokenize by sentence, then by word to ensure that punctuation is caught as it's own token
-   tokens = [word for sent in sent_tokenize(text) for word in word_tokenize(sent)]
-   filtered_tokens = []
-   # filter out any tokens not containing letters (e.g., raw punctuation, numbers)
-   for token in tokens:
-       if re.search('[a-zA-Z]', token):
-           filtered_tokens.append(token)
-           
-   return filtered_tokens
+def tokenizing(text, stemming=True):
+    # first tokenize by sentence, then by word to ensure that punctuation is caught as it's own token
+    tokens = [word for sent in sent_tokenize(text) for word in word_tokenize(sent)]
+    filtered_words = []
+    # filter out any tokens not containing letters (e.g., raw punctuation, numbers)
+    for token in tokens:
+        if re.search('[a-zA-Z]', token):
+            filtered_words.append(token)
+    # if we want to stemm the words:       
+    if stemming:
+        stemmed_words = [stemmer.stem(word) for word in filtered_words]
+        return stemmed_words
+    else:        
+        return filtered_words
 
 
 def build_tfidf(corpus):
     """
     Creates, fits to the corpus, and return the tf-idf vector from sklearn
     """
-    tf = TfidfVectorizer(max_features=50000, stop_words='english', tokenizer=tokenizing, encoding='latin')
+    tf = TfidfVectorizer(max_features=100000, stop_words='english', max_df=0.9,
+                         tokenizer=tokenizing, encoding='cp1252')
     tf.fit(corpus)
     
     return tf
 
 
-def tfidf_sentences(tfidf_vector, text):
+def tfidf_sentences(tfidf_vector, text, stemming=True):
     """
     creates a list of sentences and tranforms them using the tf-idf vector
     returns the list of sentences and the tranformed vectores of the sentences
     """
-    
-    #getting the sentences:
-    #TODO improve the sentences separator
-    sentences = sent_tokenize(text)
 
-    #tranforming the sentences using tf-idf
-    text_vect = tfidf_vector.transform(sentences)
+    #getting the sentences:
+    sentences = sent_tokenize(text)
+    
+    #if we are working with stemmed corpus we also need to stemm the words from 
+    #the text we want to summarize before transforming it with tfidf
+    # if not we can just transform the text without any other pre processing
+    if stemming:
+        stemmed_sentences = []
+        tokenized_sentences = [word_tokenize(sent) for sent in sentences]
+        for sentence in tokenized_sentences:
+            stemmed_sentences.append(' '.join([stemmer.stem(word) for word in sentence]))
+        
+        text_vect = tfidf_vector.transform(stemmed_sentences)
+    else:   
+        text_vect = tfidf_vector.transform(sentences)
     
     return sentences, text_vect
 
 
-def tfidf_summarizer(tfidf_vector, text, number_of_sentences):
+def tfidf_summarizer(tfidf_vector, text, number_of_sentences, stemming=True):
     """
     Calls the function tfidf_sentences to get the sentences and the transformed vectores
     calculates the total importance of each sentence and divides by the number of words
     Sorts and prints the most important sentences by the order they appear in the text
     """
     
-    sentences, text_vect = tfidf_sentences(tfidf_vector, text)
+    sentences, text_vect = tfidf_sentences(tfidf_vector, text, stemming=stemming)
     
     #iterate for each vector, get the sum of tf-idf and then divide by the number of words
     sentence_importance = []
@@ -77,28 +94,18 @@ def tfidf_summarizer(tfidf_vector, text, number_of_sentences):
             sentence_importance.append(soma/words)
         
     #sorting the importance of the sentences in descending order
-    sorted_importance = sorted(sentence_importance, reverse=True)
-    
-    # getting the index of the sentences in the summary
-    order = []
-    for i in range(number_of_sentences): 
-        first = sentence_importance.index(sorted_importance[i])
-        order.append(first)
+    order = np.array(sentence_importance).argsort()[::-1]
      
     #printing the sentences following the order in the text
-    for i in range(number_of_sentences):
-        first = min(order)
-        print(sentences[first])
-        order.remove(first)
+    for i in order[:number_of_sentences]:
+        print (sentences[i])
         
-
-
 
 """
 here starts text rank summarizer, based on graphs and PageRank
 """
 
-def create_graph(tfidf_vector, text):
+def create_graph(tfidf_vector, text, stemming=True):
     """
     Creates a graph for the text with the sentences as nodes and the cosine similarity 
     between the sentences as the edges
@@ -108,7 +115,7 @@ def create_graph(tfidf_vector, text):
     graph = nx.Graph()
     
     #getting the sentences and the tfidf vectores od the sentences
-    sentences, text_vect = tfidf_sentences(tfidf_vector, text)
+    sentences, text_vect = tfidf_sentences(tfidf_vector, text, stemming=stemming)
     
     #iterates of each pair of sentences
     size = len(sentences)
@@ -127,7 +134,7 @@ def create_graph(tfidf_vector, text):
         
 
 
-def textrank_summarizer(tfidf_vector, text, number_sentences):
+def textrank_summarizer(tfidf_vector, text, number_of_sentences):
     """
     Calls the function create_graph to create the graph and calculates the Pagerank value
     of the nodes. Sorts the sentences in descending order of importance
@@ -141,22 +148,42 @@ def textrank_summarizer(tfidf_vector, text, number_sentences):
     rank = nx.pagerank(graph, weight='weight')
     
     #sorting by Rank value
-    sort = sorted(rank, key=rank.get, reverse=True)
+    order = sorted(rank, key=rank.get, reverse=True)
     
     #Printing the sentences with highest rank
-    sentences_index = sort[:number_sentences]
-    for i in sentences_index:
+    for i in order[:number_of_sentences]:
         print (sentences[i])   
 
 
+def post_processing(weights_list, number_of_sentences=4, importance_factor=1.1):
+    """
+    The introduction and conclusion of a text usually are more important.
+    using the weight list of the sentences will increase the importance of number_sentences
+    in the beginning and in the end of the text by the importance_factor
+    """
+    for i in range(4):
+        weights_list[i] *= 1.1
+        weights_list[i*-1] *= 1.1
+        
+    return weights_list
 
-df = pd.read_csv(r'C:\bts_master\project\news\data.csv', encoding= 'latin')
-corpus = df.text.values
+
+
+
+df = pd.read_csv(r'C:\bts_master\project\news\data.csv', encoding='cp1252')
+#corpus = df.text.values
 
 #CREATE THE TF-IDF VECTOR BASED ON A CORPUS:
-tfidf_vector = build_tfidf(corpus)
+#tfidf_vector = build_tfidf(corpus)
 
+#To avoid creating a tfidf vectorizer every time, it takes time to do it:
+#save the tfidf vectorizer to a file
+#pickle.dump(tfidf_vector, open(r"C:\Projects\Projects\summarizer\tfidf_vector.pickle", "wb"))
+
+#load the tfidf vectorizer
+tfidf_vector = pickle.load(open(r"C:\Projects\Projects\summarizer\tfidf_vector.pickle", "rb"))
+                    
 #SUMMARIZE, text is the text to summarize and the number of sentences is how many sentences you want
-#textrank_summarizer(tfidf_vector, text, number_sentences)
+textrank_summarizer(tfidf_vector, text, number_sentences)
 #or
-#tfidf_summarizer(tfidf_vector, text, number_of_sentences)
+tfidf_summarizer(tfidf_vector, text, number_of_sentences)
