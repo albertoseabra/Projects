@@ -68,7 +68,8 @@ def tfidf_sentences(tfidf_vector, text, stemming=True):
     return sentences, text_vect
 
 
-def tfidf_summarizer(tfidf_vector, text, number_of_sentences, stemming=True):
+def tfidf_summarizer(tfidf_vector, text, number_of_sentences, stemming=True, 
+                     postprocessing=True, post_sentences=3, post_factor=1.1):
     """
     Calls the function tfidf_sentences to get the sentences and the transformed vectores
     calculates the total importance of each sentence and divides by the number of words
@@ -92,6 +93,10 @@ def tfidf_summarizer(tfidf_vector, text, number_of_sentences, stemming=True):
             sentence_importance.append(0)
         else:
             sentence_importance.append(soma/words)
+            
+    if postprocessing:
+        sentence_importance = post_processing(sentence_importance, n_sentences=post_sentences, 
+                                              factor=post_factor )
         
     #sorting the importance of the sentences in descending order
     order = np.array(sentence_importance).argsort()[::-1]
@@ -134,7 +139,8 @@ def create_graph(tfidf_vector, text, stemming=True):
         
 
 
-def textrank_summarizer(tfidf_vector, text, number_of_sentences):
+def textrank_summarizer(tfidf_vector, text, number_of_sentences, 
+                        postprocessing=True, post_sentences=3, post_factor=1.1):
     """
     Calls the function create_graph to create the graph and calculates the Pagerank value
     of the nodes. Sorts the sentences in descending order of importance
@@ -147,30 +153,40 @@ def textrank_summarizer(tfidf_vector, text, number_of_sentences):
     #calculate Pagerank
     rank = nx.pagerank(graph, weight='weight')
     
+    #convert the rank of sentences to an array
+    sentence_importance = []
+    for v in rank.values():
+        sentence_importance.append(v[0][0])
+        
+    if postprocessing:
+        sentence_importance = post_processing(sentence_importance, n_sentences=post_sentences, 
+                                              factor=post_factor )
+    
     #sorting by Rank value
-    order = sorted(rank, key=rank.get, reverse=True)
+    order = np.array(sentence_importance).argsort()[::-1]
     
     #Printing the sentences with highest rank
     for i in order[:number_of_sentences]:
         print (sentences[i])   
 
 
-def post_processing(weights_list, number_of_sentences=4, importance_factor=1.1):
+def post_processing(sentence_importance, n_sentences=3, factor=1.1):
     """
     The introduction and conclusion of a text usually are more important.
     using the weight list of the sentences will increase the importance of number_sentences
     in the beginning and in the end of the text by the importance_factor
     """
-    for i in range(4):
-        weights_list[i] *= 1.1
-        weights_list[i*-1] *= 1.1
+    sentence_importance2 = sentence_importance[:]
+    for i in range(n_sentences):
+        sentence_importance2[i] *= factor
+        sentence_importance2[i*-1] *= factor
         
-    return weights_list
+    return sentence_importance2
 
 
 
 
-df = pd.read_csv(r'C:\bts_master\project\news\data.csv', encoding='cp1252')
+#df = pd.read_csv(r'C:\bts_master\project\news\data.csv', encoding='cp1252')
 #corpus = df.text.values
 
 #CREATE THE TF-IDF VECTOR BASED ON A CORPUS:
@@ -184,6 +200,6 @@ df = pd.read_csv(r'C:\bts_master\project\news\data.csv', encoding='cp1252')
 tfidf_vector = pickle.load(open(r"C:\Projects\Projects\summarizer\tfidf_vector.pickle", "rb"))
                     
 #SUMMARIZE, text is the text to summarize and the number of sentences is how many sentences you want
-textrank_summarizer(tfidf_vector, text, number_sentences)
+#textrank_summarizer(tfidf_vector, text, number_sentences)
 #or
-tfidf_summarizer(tfidf_vector, text, number_of_sentences)
+#tfidf_summarizer(tfidf_vector, text, number_of_sentences)
