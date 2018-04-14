@@ -184,7 +184,19 @@ def post_processing(sentence_importance, n_sentences=3, factor=1.1):
     return sentence_importance2
 
 
-
+def get_key_words(tfidf_vector, text, n_words=10):
+    """
+    prints the most import important n_words from the text    
+    """
+    text_stemmed = ' '.join(tokenizing(text))
+    
+    vector = tfidf_vector.transform([text_stemmed])
+    
+    print('The most important words in this document are: ')
+    for index in vector.toarray()[0].argsort()[::-1][:n_words]:
+        print('  -{}'.format(tfidf_vector.get_feature_names()[index]))
+        
+    
 
 #df = pd.read_csv(r'C:\bts_master\project\news\data.csv', encoding='cp1252')
 #corpus = df.text.values
@@ -197,7 +209,7 @@ def post_processing(sentence_importance, n_sentences=3, factor=1.1):
 #pickle.dump(tfidf_vector, open(r"C:\Projects\Projects\summarizer\tfidf_vector.pickle", "wb"))
 
 #load the tfidf vectorizer
-tfidf_vector = pickle.load(open(r"C:\Projects\Projects\summarizer\tfidf_vector.pickle", "rb"))
+tfidf_vector = pickle.load(open("tfidf_vector.pickle", "rb"))
                     
 #SUMMARIZE, text is the text to summarize and the number of sentences is how many sentences you want
 #textrank_summarizer(tfidf_vector, text, number_sentences)
