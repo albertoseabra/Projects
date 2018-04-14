@@ -188,13 +188,19 @@ def get_key_words(tfidf_vector, text, n_words=10):
     """
     prints the most import important n_words from the text    
     """
+    #stemming and tranforming the text first
     text_stemmed = ' '.join(tokenizing(text))
     
     vector = tfidf_vector.transform([text_stemmed])
     
     print('The most important words in this document are: ')
+    
+    #gets the important stemmed words and find those words in the text to print the original
     for index in vector.toarray()[0].argsort()[::-1][:n_words]:
-        print('  -{}'.format(tfidf_vector.get_feature_names()[index]))
+        stemmed_word = tfidf_vector.get_feature_names()[index]
+        
+        indices = re.search('{}\S*'.format(str(stemmed_word)), text.lower()).span()
+        print('  -{}'.format(text[indices[0]:indices[1]]))
         
     
 
