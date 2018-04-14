@@ -23,6 +23,13 @@ Predicting the next product each customer will subscribe between 94 different po
 Predictions based on products already subscribed and the date of subsciption, and social demographic information.
 Feature Engineering
 
+## Text Summarizer
+#### https://github.com/albertoseabra/Projects/tree/master/summarizer
+Extracts a summary of a text. Using two different methods:  
+  -Selecting most important sentences based on tf-idf    
+  -Creating a graph, calculating similarity and applying PageRank    
+Also extracts the most important words from a text
+
 
 # Others
 #### https://github.com/albertoseabra/Projects/blob/master/beer_recipe_webscraper.ipynb
@@ -31,9 +38,3 @@ Web scrapping of all the recipes of beers from a website with complete informati
 
 #### https://github.com/albertoseabra/Projects/tree/master/blackjack
 BlackJack game with multiplayer. With OOP.
-
-#### https://github.com/albertoseabra/Projects/tree/master/summarizer
-Summarizer of text. Using two different methods:  
-  -Selecting most important sentences based on tf-idf    
-  -Creating a graph, calculating similarity and applying PageRank 
-
