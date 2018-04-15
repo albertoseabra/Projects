@@ -14,42 +14,73 @@ from sklearn.metrics.pairwise import cosine_similarity
 import networkx as nx
 import re
 import pickle
+import requests
+from bs4 import BeautifulSoup
 
 stemmer = LancasterStemmer()
 
 
 class Summarizer:
     
-    def __init__(self, tfidf_vector, text, stemming=True):
+    def __init__(self, tfidf_vector, text=None, url=None, stemming=True):
         self.tfidf_vector = tfidf_vector
-        self.text = text
-        self.sentences, self.text_vect = self.tfidf_sentences(stemming=stemming)
+        self.title = None
+        self.url = url
+        if text is not None:
+            self.text = text
+            self.sentences = [line for line in self.text.split('\n') if len(line) > 10]
+            self.text_vect = self.tfidf_sentences(stemming=stemming)
+        elif url is not None:
+            self.sentences, self.title = self.scrape_website()
+            self.text = '\n'.join(self.sentences)
+            self.text_vect = self.tfidf_sentences(stemming=stemming)
+        else:
+            print('You need a text or a url to summarize')
         self.sentence_weights_graph = []
         self.sentence_weights_tfidf = []
         
         
-    def tfidf_sentences(self, stemming=True):
-        """
-        creates a list of sentences and tranforms them using the tf-idf vector
-        returns the list of sentences and the tranformed vectores of the sentences
-        """
-        #getting the sentences:
-        sentences = sent_tokenize(self.text)
+    def scrape_website(self):
         
+        
+        page = requests.get(self.url)
+        
+        if page.status_code == requests.codes.ok:
+            soup = BeautifulSoup(page.content, 'lxml')
+            
+            title = soup.find('h1').text
+            
+            # find the text
+            text = [line.text for line in soup.findAll('p')]
+            #using this will return us each sentence, sometimes those sentences are very short
+            # and its really hard to understand what's going on with a short sentence
+            #tokenize each paragraph and flatten the list of lists
+            #text_sentences = [sent_tokenize(line) for line in text]
+            #sentences = [sentence for sublist in text_sentences for sentence in sublist]
+            
+            return text, title
+        
+        else: print('Something went wrong trying to access the URL')
+        
+        
+    def tfidf_sentences(self, stemming):
+        """
+        transformes the sentences in tfidf vectors and returns them
+        """
         #if we are working with stemmed corpus we also need to stemm the words from 
         #the text we want to summarize before transforming it with tfidf
         # if not we can just transform the text without any other pre processing
         if stemming:
             stemmed_sentences = []
-            tokenized_sentences = [word_tokenize(sent) for sent in sentences]
+            tokenized_sentences = [word_tokenize(sent) for sent in self.sentences]
             for sentence in tokenized_sentences:
                 stemmed_sentences.append(' '.join([stemmer.stem(word) for word in sentence]))
             
             text_vect = self.tfidf_vector.transform(stemmed_sentences)
         else:   
-            text_vect = self.tfidf_vector.transform(sentences)
+            text_vect = self.tfidf_vector.transform(self.sentences)
         
-        return sentences, text_vect
+        return  text_vect
     
     
     def get_key_words(self, n_words=10):
@@ -57,7 +88,7 @@ class Summarizer:
         prints the most import important n_words from the text    
         """
         #stemming and tranforming the text first
-        tokens = [word_tokenize(sent) for sent in self.sentences]
+        tokens = [word for sent in sent_tokenize(self.text) for word in word_tokenize(sent)]
         stemmed = [stemmer.stem(word) for word in tokens]
         text_stemmed = ' '.join(stemmed)
         
@@ -75,7 +106,6 @@ class Summarizer:
     
     def tfidf_summary(self, number_of_sentences, postprocessing=True, post_sentences=3, post_factor=1.1):
         """
-        Calls the function tfidf_sentences to get the sentences and the transformed vectores
         calculates the total importance of each sentence and divides by the number of words
         Sorts and prints the most important sentences by the order they appear in the text
         """
@@ -97,18 +127,20 @@ class Summarizer:
                 self.sentence_weights_tfidf.append(soma/words)
                 
         if postprocessing:
-            self.sentence_weights_tfidf = self.post_processing(self, self.sentence_weights_tfidf, 
-                                                               n_sentences=post_sentences, factor=post_factor)
+            self.sentence_weights_tfidf = self.post_processing(self.sentence_weights_tfidf, 
+                                                               post_sentences, post_factor)
             
         #sorting the importance of the sentences in descending order
         order = np.array(self.sentence_weights_tfidf).argsort()[::-1]
-         
+        
+        if self.title is not None:
+            print("Title: ", self.title)
         #printing the sentences following the order in the text
         for i in order[:number_of_sentences]:
             print (self.sentences[i])
             
         
-    def post_processing(self, sentence_weights, n_sentences=3, factor=1.1):
+    def post_processing(self, sentence_weights, n_sentences, factor):
         """
         The introduction and conclusion of a text usually are more important.
         using the weight list of the sentences will increase the importance of number_sentences
@@ -165,12 +197,14 @@ class Summarizer:
             self.sentence_weights_graph.append(v[0][0])
             
         if postprocessing:
-            self.sentence_weights_graph = self.post_processing(self, self.sentence_weights_graph, 
-                                                               n_sentences=post_sentences, factor=post_factor)
+            self.sentence_weights_graph = self.post_processing(self.sentence_weights_graph, 
+                                                               post_sentences, post_factor)
         
         #sorting by Rank value
         order = np.array(self.sentence_weights_graph).argsort()[::-1]
         
+        if self.title is not None:
+            print("Title: ", self.title)
         #Printing the sentences with highest rank
         for i in order[:number_of_sentences]:
             print (self.sentences[i])   
@@ -178,10 +212,11 @@ class Summarizer:
                    
             
 #load the tfidf vectorizer
-tfidf_vector = pickle.load(open("tfidf_vector.pickle", "rb"))
+#tfidf_vector = pickle.load(open("tfidf_vector250k.pickle", "rb"))
 
 
-            
+         
+   
             
 # TO BUILD A NEW TFIDF VECTOR:
 def tokenizing(text, stemming=True):
@@ -210,5 +245,6 @@ def build_tfidf(corpus):
     
     return tf
 
-
+#CREATE THE TF-IDF VECTOR BASED ON A CORPUS:
+#tfidf_vector = build_tfidf(corpus)
         
