@@ -24,7 +24,8 @@ Predictions based on products already subscribed and the date of subsciption, an
 Feature Engineering
 
 ## Text Summarizer
-#### https://github.com/albertoseabra/Projects/tree/master/summarizer
+#### Now with OOP https://github.com/albertoseabra/Projects/blob/master/summarizer/summaryOOP.py
+##### https://github.com/albertoseabra/Projects/tree/master/summarizer
 Extracts a summary of a text. Using two different methods:  
   -Selecting most important sentences based on tf-idf    
   -Creating a graph, calculating similarity and applying PageRank    
