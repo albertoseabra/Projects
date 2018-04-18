@@ -67,7 +67,7 @@ class Summarizer:
             # find the text
             text = [line.text for line in soup.findAll('p')]
             
-            paragraphs = [line for line in text if len(line)>10]
+            paragraphs = [line for line in text if len(line)>20]
             
             return paragraphs, title
         
@@ -81,6 +81,9 @@ class Summarizer:
         sentences_list = [sent_tokenize(paragr) for paragr in self.paragraphs]
         #flatten the list of lists
         sentences = [sentence for sublist in sentences_list for sentence in sublist]
+        # filter potential short sentences that dont add much to the story
+        # or are thing like "share this", "advertising", things that shouldnt be part
+        sentences = [sentence for sentence in sentences if len(sentences)>20]
         
         return sentences
         
@@ -181,18 +184,7 @@ class Summarizer:
             #sorting the importance of the sentences in descending order
             order = np.array(self.paragraph_weights_tfidf).argsort()[::-1]            
             
-        if self.title is not None:
-            print("Title: ", self.title)
-        print()
-        self.key_words(5)
-        print()
-        if sentences:
-            #printing the sentences following the order in the text
-            for i in order[:number_of_sentences]:
-                print (self.sentences[i])
-        else:
-            for i in order[:number_of_sentences]:
-                print (self.paragraphs[i])
+        self.print_summary(order, number_of_sentences, sentences)
             
         
     def post_processing(self, sentence_weights, n_sentences, factor):
@@ -274,20 +266,27 @@ class Summarizer:
             #sorting by Rank value
             order = np.array(self.paragraph_weights_graph).argsort()[::-1]        
         
+        self.print_summary(order, number_of_sentences, sentences)
+            
+        
+    def print_summary(self, ordered_list, number_of_sentences, sentences):
+        """
+        just to print the summary giving the list of indices ordered by importance
+        """
         if self.title is not None:
             print("Title: ", self.title)
         print()    
         self.key_words(5)
         print()
-        if sentences:
-            #Printing the sentences with highest rank
-            for i in order[:number_of_sentences]:
+        
+        #printing the sentences following the order in the text
+        indices = sorted(ordered_list[:number_of_sentences])
+        for i in indices:
+            if sentences:
                 print (self.sentences[i])
-        else:
-            for i in order[:number_of_sentences]:
-                print (self.paragraphs[i])
-            
-                   
+            else:
+                print (self.paragraphs[i])        
+        
             
 #load the tfidf vectorizer
 #tfidf_vector = pickle.load(open("tfidf_vector250k.pickle", "rb"))
