@@ -30,27 +30,25 @@ class Summarizer:
         if text is not None:
             self.text = text
             self.paragraphs = [line for line in self.text.split('\n') if len(line) > 10]
-            self.sentences = self.get_sentences()
-            self.sentences_vect = self.tfidf_text_list(self.sentences, stemming=stemming)
-            self.paragraph_vect = self.tfidf_text_list(self.paragraphs, stemming=stemming)
+            
         elif url is not None:
             self.paragraphs, self.title = self.scrape_website()
             self.text = '\n'.join(self.paragraphs) 
-            self.sentences = self.get_sentences()
-            self.sentences_vect = self.tfidf_text_list(self.sentences, stemming=stemming)
-            self.paragraph_vect = self.tfidf_text_list(self.paragraphs, stemming=stemming)
+            
         else:
-            print('You need a text or a url to summarize')
-        
+            raise Exception('You need a text or a url to summarize')
+
+        self.sentences = self.get_sentences()
+        self.sentences_vect = self.tfidf_text_list(self.sentences, stemming=stemming)
+        self.paragraph_vect = self.tfidf_text_list(self.paragraphs, stemming=stemming)
         self.sentence_weights_graph = []
         self.sentence_weights_tfidf = []
         self.paragraph_weights_graph = []
         self.paragraph_weights_tfidf = []
                 
-        print("this text has {} sentences and {} paragraphs, you can summarize using one or the other."\
+        print("this text has {} sentences and {} paragraphs, you can summarize using one or the other."
               .format(len(self.sentences), len(self.paragraphs)))
-        
-        
+
     def scrape_website(self):
         """
         Extracts the title and a list with the paragraphs of the text
@@ -59,42 +57,44 @@ class Summarizer:
         
         if page.status_code == requests.codes.ok:
             soup = BeautifulSoup(page.content, 'lxml')
-            try:
-                title = soup.find('h1').text.strip()
-            except:
-                print('Failed to extract title')
             
             # find the text
             text = [line.text for line in soup.findAll('p')]
             
-            paragraphs = [line for line in text if len(line)>20]
-            
-            return paragraphs, title
+            paragraphs = [line for line in text if len(line) > 20]
+
+            try:
+                title = soup.find('h1').text.strip()
+
+                return paragraphs, title
+            except:
+                print('Failed to extract title')
+
+            return paragraphs
         
-        else: print('Something went wrong trying to access the URL')
-        
-    
+        else:
+            print('Something went wrong trying to access the URL')
+
     def get_sentences(self):
         """
         transforms the paragraphs in list of sentnences
         """
         sentences_list = [sent_tokenize(paragr) for paragr in self.paragraphs]
-        #flatten the list of lists
+        # flatten the list of lists
         sentences = [sentence for sublist in sentences_list for sentence in sublist]
         # filter potential short sentences that dont add much to the story
-        # or are thing like "share this", "advertising", things that shouldnt be part
-        sentences = [sentence for sentence in sentences if len(sentences)>20]
+        # or are thing like "share this", "advertising", things that shouldn't be part
+        sentences = [sentence for sentence in sentences if len(sentences) > 20]
         
         return sentences
         
-        
     def tfidf_text_list(self, text_list, stemming):
         """
-        transformes the text, list of sentences or list of paragraphs,
+        transforms the text, list of sentences or list of paragraphs,
         in tfidf vectors and returns them
         """
-        #if we are working with stemmed corpus we also need to stemm the words from 
-        #the text we want to summarize before transforming it with tfidf
+        # if we are working with stemmed corpus we also need to stem the words from
+        # the text we want to summarize before transforming it with tfidf
         # if not we can just transform the text without any other pre processing
         if stemming:
             stemmed_sentences = []
@@ -106,14 +106,13 @@ class Summarizer:
         else:   
             text_vect = self.tfidf_vector.transform(text_list)
         
-        return  text_vect
-    
-    
+        return text_vect
+
     def key_words(self, n_words=10):
         """
         prints the most import important n_words from the text    
         """
-        #stemming and tranforming the text first
+        # stemming and transforming the text first
         tokens = [word for sent in sent_tokenize(self.text) for word in word_tokenize(sent)]
         stemmed = [stemmer.stem(word) for word in tokens]
         text_stemmed = ' '.join(stemmed)
@@ -121,16 +120,14 @@ class Summarizer:
         vector = self.tfidf_vector.transform([text_stemmed])
         
         print('The top Words are: ')
-        #gets the important stemmed words and find those words in the text to print the original
+        # gets the important stemmed words and find those words in the text to print the original
         for index in vector.toarray()[0].argsort()[::-1][:n_words]:
             stemmed_word = self.tfidf_vector.get_feature_names()[index]
             
             indices = re.search('{}\S*'.format(str(stemmed_word)), self.text.lower()).span()
             print(' {};'.format(self.text[indices[0]:indices[1]]), end=' ')
         print()
-    
-    
-    
+
     def tfidf_summary(self, number_of_sentences, sentences=False, 
                       postprocessing=True, post_sentences=1, post_factor=1.1):
         """
@@ -138,20 +135,20 @@ class Summarizer:
         Sorts and prints the most important sentences/paragraphs by the order they appear in the text
         Will use paragrphs as default, to use sentences need to use sentences=True
         """
-        #if we are working with sentences:
+        # if we are working with sentences:
         if sentences:
             # better to start with a new weights list everytime the summary is called 
             self.sentence_weights_tfidf = []
-            #iterate for each vector, get the sum of tf-idf and then divide by the number of words
+            # iterate for each vector, get the sum of tf-idf and then divide by the number of words
             for i in range(self.sentences_vect.shape[0]):
                 soma = self.sentences_vect[i].sum()
                 words = self.sentences_vect[i].count_nonzero()
-                #in case a sentence has only stopwords and/or numbers the sum of tf-idf will be zero
-                #we give it the importance value of 0
+                # in case a sentence has only stopwords and/or numbers the sum of tf-idf will be zero
+                # we give it the importance value of 0
                 if soma == 0:
                     self.sentence_weights_tfidf.append(0)
-                #in case is a really short sentence it might get high importance value
-                #but it wont give us much information, going to ignore them
+                # in case is a really short sentence it might get high importance value
+                # but it wont give us much information, going to ignore them
                 elif words < 5:
                     self.sentence_weights_tfidf.append(0)
                 else:
@@ -161,7 +158,7 @@ class Summarizer:
                 self.sentence_weights_tfidf = self.post_processing(self.sentence_weights_tfidf, 
                                                                    post_sentences, post_factor)
                 
-            #sorting the importance of the sentences in descending order
+            # sorting the importance of the sentences in descending order
             order = np.array(self.sentence_weights_tfidf).argsort()[::-1]
             
         else:
@@ -179,14 +176,13 @@ class Summarizer:
                     
             if postprocessing:
                 self.paragraph_weights_tfidf = self.post_processing(self.paragraph_weights_tfidf, 
-                                                                   post_sentences, post_factor)
+                                                                    post_sentences, post_factor)
                 
-            #sorting the importance of the sentences in descending order
+            # sorting the importance of the sentences in descending order
             order = np.array(self.paragraph_weights_tfidf).argsort()[::-1]            
             
         self.print_summary(order, number_of_sentences, sentences)
-            
-        
+
     def post_processing(self, sentence_weights, n_sentences, factor):
         """
         The introduction and conclusion of a text usually are more important.
@@ -199,28 +195,27 @@ class Summarizer:
             sentence_weights2[i*-1] *= factor
             
         return sentence_weights2
-    
+
     def create_graph(self, text_list, text_vector):
         """
         Creates a graph for the text with the sentences/paragraphs as nodes and 
         the cosine similarity between the sentences as the edges
         returns the graph
         """
-        #initialize networkx graph
+        # initialize networkx graph
         graph = nx.Graph()
         
-        #iterates of each pair of sentences
+        # iterates of each pair of sentences
         size = len(text_list)
         for index1 in range(size):
-            for index2 in range(index1 + 1,size):
+            for index2 in range(index1 + 1, size):
                 if index1 == index2:
                     continue
-                #calculates the similarity between the pair of sentences
-                #creates and graph edge between the sentences with the similarity as edge weight
+                # calculates the similarity between the pair of sentences
+                # creates and graph edge between the sentences with the similarity as edge weight
                 else:
-                    graph.add_edge(index1, index2, 
-                                   weight= cosine_similarity(text_vector[index1].toarray(),
-                                                             text_vector[index2].toarray()))
+                    graph.add_edge(index1, index2, weight=cosine_similarity(text_vector[index1].toarray(),
+                                                                            text_vector[index2].toarray()))
         
         return graph
     
@@ -235,12 +230,12 @@ class Summarizer:
         if sentences:
             # better to start with a new weights list everytime the summary is called 
             self.sentence_weights_graph = []
-            #creating the graph
+            # creating the graph
             graph = self.create_graph(self.sentences, self.sentences_vect)
-            #calculate Pagerank
+            # calculate Pagerank
             rank = nx.pagerank(graph, weight='weight')
             
-            #convert the rank of sentences to an array
+            # convert the rank of sentences to an array
             for v in rank.values():
                 self.sentence_weights_graph.append(v[0][0])
                 
@@ -248,7 +243,7 @@ class Summarizer:
                 self.sentence_weights_graph = self.post_processing(self.sentence_weights_graph, 
                                                                    post_sentences, post_factor)
             
-            #sorting by Rank value
+            # sorting by Rank value
             order = np.array(self.sentence_weights_graph).argsort()[::-1]
         
         else:
@@ -263,12 +258,12 @@ class Summarizer:
                 self.paragraph_weights_graph = self.post_processing(self.paragraph_weights_graph, 
                                                                    post_sentences, post_factor)
             
-            #sorting by Rank value
+            # sorting by Rank value
             order = np.array(self.paragraph_weights_graph).argsort()[::-1]        
         
         self.print_summary(order, number_of_sentences, sentences)
-            
-        
+
+
     def print_summary(self, ordered_list, number_of_sentences, sentences):
         """
         just to print the summary giving the list of indices ordered by importance
@@ -279,7 +274,7 @@ class Summarizer:
         self.key_words(5)
         print()
         
-        #printing the sentences following the order in the text
+        # printing the sentences following the order in the text
         indices = sorted(ordered_list[:number_of_sentences])
         for i in indices:
             if sentences:
@@ -288,13 +283,12 @@ class Summarizer:
                 print (self.paragraphs[i])        
         
             
-#load the tfidf vectorizer
-#tfidf_vector = pickle.load(open("tfidf_vector250k.pickle", "rb"))
-
-#data = pd.read_csv('/home/alberto/Downloads/news_summary.csv', encoding='cp437')
+# load the tfidf vectorizer
+# tfidf_vector = pickle.load(open("tfidf_vector250k.pickle", "rb"))
+#
+# data = pd.read_csv('/home/alberto/Downloads/news_summary.csv', encoding='cp437')
          
-   
-            
+
 # TO BUILD A NEW TFIDF VECTOR:
 def tokenizing(text, stemming=True):
     # first tokenize by sentence, then by word to ensure that punctuation is caught as it's own token
@@ -322,6 +316,5 @@ def build_tfidf(corpus):
     
     return tf
 
-#CREATE THE TF-IDF VECTOR BASED ON A CORPUS:
-#tfidf_vector = build_tfidf(corpus)
-        
+# CREATE THE TF-IDF VECTOR BASED ON A CORPUS:
+# tfidf_vector = build_tfidf(corpus)
