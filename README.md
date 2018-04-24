@@ -24,12 +24,19 @@ Predictions based on products already subscribed and the date of subsciption, an
 Feature Engineering
 
 ## Text Summarizer
-#### Now with OOP https://github.com/albertoseabra/Projects/blob/master/summarizer/summaryOOP.py
-##### https://github.com/albertoseabra/Projects/tree/master/summarizer
+### New Version: https://github.com/albertoseabra/Projects/blob/master/summarizer/summarizerembeddings.py
+New version with using word embeddings instead of TF-IDF vectors   
+Can make summaries also with two different methods:
++ Implementing Textrank but now first the sentences are transformed using word embeddings and then is calculated the similarity between them
++ A greedy algorith that adds to the summary the sentence that gives the largest increase in similarity between the full text and the summary
+
+#### 1st version now with OOP https://github.com/albertoseabra/Projects/blob/master/summarizer/summaryOOP.py
+
 Extracts a summary of a text. Using two different methods:  
-  -Selecting most important sentences based on tf-idf    
-  -Creating a graph, calculating similarity and applying PageRank    
-Also extracts the most important words from a text
+  - Selecting most important sentences based on tf-idf    
+  - Creating a graph, calculating similarity between sentences and applying PageRank to select the most important sentences   
+Also extracts the most important words from a text, works with a url or with the text of the news, and can do the summary with sentences or paragraphs.   
+older version: https://github.com/albertoseabra/Projects/tree/master/summarizer
 
 
 # Others
