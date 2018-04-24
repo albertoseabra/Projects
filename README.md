@@ -26,9 +26,10 @@ Feature Engineering
 ## Text Summarizer
 ### New Version: https://github.com/albertoseabra/Projects/blob/master/summarizer/summarizerembeddings.py
 New version with using word embeddings instead of TF-IDF vectors   
-Can make summaries also with two different methods:
+Can make summaries also with different methods:
 + Implementing Textrank but now first the sentences are transformed using word embeddings and then is calculated the similarity between them
-+ A greedy algorith that adds to the summary the sentence that gives the largest increase in similarity between the full text and the summary
++ A summarizer that just selects the sentences that are most similar with the full text, ends up givin the same results as Textrank
++ A greedy algorith that adds to the summary the sentence that gives the largest increase in similarity between the full text and the summary, avoiding that way the problem of adding redundant sentences, sentences that are similar to the full text but don't increase the ammount of information in the summary
 
 #### 1st version now with OOP https://github.com/albertoseabra/Projects/blob/master/summarizer/summaryOOP.py
 
