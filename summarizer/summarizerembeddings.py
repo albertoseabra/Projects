@@ -2,6 +2,8 @@ import numpy as np
 import networkx as nx
 import requests
 from bs4 import BeautifulSoup
+from sklearn.cluster import KMeans
+from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 nlp = spacy.load('en_core_web_lg')
 #glove embeddings:
@@ -183,6 +185,70 @@ class SummarizerEmbeddings:
         print('Similarity between the full text and the summary: {}'.format(self.embedded_text.similarity(nlp(summary))))
 
 
+    def centroid_summary(self, number_of_sentences):
+        """
+        Divides de document in number_of_sentences clusters using K-Means
+        from each cluster selects the sentences more similar to the cluster center to create a summary
+        :param number_of_sentences:
+        :return:
+        """
+
+
+        sentences_array = np.array([sentence.vector for sentence in self.sentences])
+
+        cluster = KMeans(number_of_sentences).fit(sentences_array)
+
+        closest_sentences = []
+        for i, center in enumerate(cluster.cluster_centers_):
+            closest = [(0,0)]
+            for j, sentence in enumerate(self.sentences):
+                if cluster.labels_[j] == i:
+                    sim = cosine_similarity(cluster.cluster_centers_[i].reshape(1,-1), self.sentences[j].vector.reshape(1,-1))
+                    if sim > closest[0][1]:
+                        closest = [(j,sim)]
+
+            closest_sentences.append(closest)
+
+        summary_indices = [l[0][0] for l in closest_sentences]
+
+        self.print_summary(summary_indices, number_of_sentences)
+
+
+    def centroid_summary2(self, number_of_sentences):
+        """
+        a bit more complex than the previous: first divides document using K-Means
+        for each cluster compares the similarity of the full text of the cluster with each sentence that is part of
+        that cluster and selects the sentence with the highest similarity with the full text of the custer
+        :param number_of_sentences:
+        :return:
+        """
+
+        sentences_array = np.array([sentence.vector for sentence in self.sentences])
+
+        cluster = KMeans(number_of_sentences).fit(sentences_array)
+
+        final_summary = []
+        # for each cluster creates a text with the sentences that belong to that cluster
+        for i, center in enumerate(cluster.cluster_centers_):
+            text = ""
+            sentences_indices = []
+            for j, sentence in enumerate(self.sentences):
+                if cluster.labels_[j] == i:
+                    text += str(self.sentences[j])
+                    sentences_indices.append(j)
+
+            # compares the similarity of each sentence with the full text of the cluster
+            sentences_simil = []
+            for indice in sentences_indices:
+                sim = self.sentences[indice].similarity(nlp(text))
+                sentences_simil.append(sim)
+            # append to the summary the sentence with the highest similarity
+            final_summary.append(sentences_indices[np.argmax(sentences_simil)])
+
+        self.print_summary(final_summary, number_of_sentences)
+
+
+
 
     def print_similarities(self):
 
@@ -197,15 +263,3 @@ class SummarizerEmbeddings:
             print("similarity between full text and sentences {} is {}".format(i, sim))
 
         return np.array(sentences_simil).argsort()[::-1]
-
-
-
-
-
-
-
-
-
-
-
-
