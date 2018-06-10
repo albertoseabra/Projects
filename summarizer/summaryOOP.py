@@ -128,8 +128,8 @@ class Summarizer:
             print(' {};'.format(self.text[indices[0]:indices[1]]), end=' ')
         print()
 
-    def tfidf_summary(self, number_of_sentences, sentences=False, 
-                      postprocessing=True, post_sentences=1, post_factor=1.1):
+    def tfidf_summary(self, number_of_sentences, sentences=True,
+                      postprocessing=False, post_sentences=1, post_factor=1.1):
         """
         calculates the total importance of each sentence or paragraph and divides by the number of words
         Sorts and prints the most important sentences/paragraphs by the order they appear in the text
@@ -219,8 +219,8 @@ class Summarizer:
         
         return graph
     
-    def textrank_summary(self, number_of_sentences, sentences=False, 
-                         postprocessing=True, post_sentences=1, post_factor=1.1):
+    def textrank_summary(self, number_of_sentences, sentences=True,
+                         postprocessing=False, post_sentences=1, post_factor=1.1):
         """
         Calls the function create_graph to create the graph and calculates the Pagerank value
         of the nodes. Sorts the sentences in descending order of importance
