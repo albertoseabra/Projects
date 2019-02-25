@@ -1,3 +1,6 @@
+# Most recent project:
+[An "inpirational" quote generator with a twitter bot script to post the quotes](https://github.com/albertoseabra/quotes_generator_twitter)
+
 # Exploratory Data Analysis, Data Cleaning, Feature Engineering & Machine Learning
 #### https://github.com/albertoseabra/Projects/blob/master/exploration/adults_analysis.ipynb
 EDA of a data set (https://archive.ics.uci.edu/ml/datasets/Adult) with census data of the USA. Includes information like age, 
