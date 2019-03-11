@@ -139,4 +139,5 @@ $RECYCLE.BIN/
 *.lnk
 
 .gitignore
-/pica/
+pica/
+no_github/
